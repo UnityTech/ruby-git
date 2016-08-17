@@ -2,6 +2,6 @@ module Git
 
   # The current gem version
   # @return [String] the current gem version.
-  VERSION='1.3.0'
+  VERSION='1.3.1.pre.0'
 
 end

@@ -53,6 +53,7 @@ module Git
     #  :path::      directory where the repo will be cloned
     #  :remote::    name of remote (rather than 'origin')
     #  :recursive:: after the clone is created, initialize all submodules within, using their default settings.
+    #  :lfs::       use 'git lfs clone' command instead of 'git clone' (requires git-lfs client to be installed)
     #
     # TODO - make this work with SSH password or auth_key
     #
@@ -73,7 +74,23 @@ module Git
       arr_opts << repository
       arr_opts << clone_dir
 
-      command('clone', arr_opts)
+      start_time = Time.now
+
+      if opts[:lfs]
+        # verify git lfs installed
+        if !(/git-lfs/.match(command('lfs version')))
+          raise "clone: attempted to clone with git lfs, but it is not installed."
+        end
+        command('lfs clone', arr_opts)
+      else
+        command('clone', arr_opts)
+      end
+
+      end_time = Time.now
+
+      sec_diff = (start_time - end_time).to_i.abs
+
+      puts "Cloned in #{sec_diff} seconds."
 
       opts[:bare] ? {:repository => clone_dir} : {:working_directory => clone_dir}
     end
