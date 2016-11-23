@@ -1,4 +1,6 @@
 require 'tempfile'
+require 'pty'
+require 'logger'
 
 module Git
 
@@ -87,11 +89,19 @@ module Git
         end
 
         @logger.info("clone(): git lfs clone")
-        command('lfs clone', arr_opts)
+        command_string = 'lfs clone'
       else
 
         @logger.info("clone(): git clone")
-        command('clone', arr_opts)
+        command_string = 'clone'
+      end
+
+      command(command_string, arr_opts, true, '') do |stdout, stdin, pid|
+        begin
+          stdout.each("\r") { |line| @logger.info line }
+          Process.wait(pid)
+        rescue Errno::EIO
+        end
       end
 
       end_time = Time.now
@@ -962,7 +972,7 @@ module Git
       end
 
       if @logger
-        @logger.info(git_cmd)
+        @logger.debug(git_cmd)
         @logger.debug(output)
       end
 
@@ -1027,7 +1037,13 @@ module Git
     end
 
     def run_command(git_cmd, &block)
-      return IO.popen(git_cmd, &block) if block_given?
+      if block_given?
+        return begin
+          PTY.spawn(git_cmd, &block)
+        rescue PTY::ChildExited
+          puts "Child process exited: #{git_cmd}"
+        end
+      end
 
       `#{git_cmd}`.chomp
     end
