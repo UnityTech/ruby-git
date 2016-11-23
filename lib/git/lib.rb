@@ -59,7 +59,7 @@ module Git
     #
     def clone(repository, name, opts = {})
       @path = opts[:path] || '.'
-      clone_dir = opts[:path] ? File.join(@path, name) : name
+      clone_dir = opts[:path] ? opts[:path]: name
 
       arr_opts = []
       arr_opts << '--bare' if opts[:bare]
@@ -76,13 +76,21 @@ module Git
 
       start_time = Time.now
 
+      if opts[:log]
+        @logger = opts[:log]
+      end
+
       if opts[:lfs]
         # verify git lfs installed
         if !(/git-lfs/.match(command('lfs version')))
           raise "clone: attempted to clone with git lfs, but it is not installed."
         end
+
+        @logger.info("clone(): git lfs clone")
         command('lfs clone', arr_opts)
       else
+
+        @logger.info("clone(): git clone")
         command('clone', arr_opts)
       end
 
@@ -658,7 +666,15 @@ module Git
       arr_opts << '--force' if opts[:force] || opts[:f]
       arr_opts << branch
 
-      command('checkout', arr_opts)
+      if (opts[:lfs])
+        # verify git lfs installed
+        if !(/git-lfs/.match(command('lfs version')))
+          raise "clone: attempted to clone with git lfs, but it is not installed."
+        end
+        command('lfs checkout', arr_opts)
+      else
+        command('checkout', arr_opts)
+      end
     end
 
     def checkout_file(version, file)
