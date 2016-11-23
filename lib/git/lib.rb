@@ -83,14 +83,9 @@ module Git
       end
 
       if opts[:lfs]
-        if !(/git-lfs/.match(`git lfs env`))
-          raise "clone(): attempted to clone with git lfs, but it is not installed."
-        end
-
         @logger.info("clone(): git lfs clone")
         command_string = 'lfs clone'
       else
-
         @logger.info("clone(): git clone")
         command_string = 'clone'
       end
